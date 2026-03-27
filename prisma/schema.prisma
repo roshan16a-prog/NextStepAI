@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(uuid())
+  clerkUserId       String             @unique
+  email             String             @unique
+  name              String?
+  imageUrl          String?
+  industry          String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  bio               String?
+  experience        Int?
+  skills            String[]
+  assessments       Assessment[]
+  coverLetter       CoverLetter[]
+  interviewSessions InterviewSession[]
+  resume            Resume?
+  industryInsight   IndustryInsight?   @relation(fields: [industry], references: [industry])
+}
+
+model Assessment {
+  id             String   @id @default(cuid())
+  userId         String
+  quizScore      Float
+  questions      Json[]
+  category       String
+  improvementTip String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Resume {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  content   String
+  atsScore  Float?
+  feedback  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model CoverLetter {
+  id             String   @id @default(cuid())
+  userId         String
+  content        String
+  jobDescription String?
+  companyName    String
+  jobTitle       String
+  status         String   @default("draft")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model IndustryInsight {
+  id                String   @id @default(cuid())
+  industry          String   @unique
+  salaryRanges      Json[]
+  growthRate        Float
+  demandLevel       String
+  topSkills         String[]
+  marketOutlook     String
+  keyTrends         String[]
+  recommendedSkills String[]
+  lastUpdated       DateTime @default(now())
+  nextUpdate        DateTime
+  users             User[]
+
+  @@index([industry])
+}
+
+model InterviewSession {
+  id             String              @id @default(cuid())
+  userId         String
+  jobRole        String
+  jobDescription String
+  companyName    String?
+  interviewType  String
+  difficulty     String              @default("Medium")
+  duration       Int?
+  focusAreas     String[]
+  status         String              @default("pending")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  startedAt      DateTime?
+  completedAt    DateTime?
+  feedback       InterviewFeedback?
+  questions      InterviewQuestion[]
+  responses      InterviewResponse[]
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model InterviewQuestion {
+  id                 String              @id @default(cuid())
+  sessionId          String
+  questionText       String
+  category           String
+  difficulty         String
+  orderIndex         Int
+  keyPoints          String[]
+  evaluationCriteria Json?
+  createdAt          DateTime            @default(now())
+  session            InterviewSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  responses          InterviewResponse[]
+
+  @@index([sessionId])
+  @@index([orderIndex])
+}
+
+model InterviewResponse {
+  id            String            @id @default(cuid())
+  sessionId     String
+  questionId    String
+  transcription String
+  audioUrl      String?
+  duration      Int?
+  confidence    Float?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  question      InterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  session       InterviewSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([questionId])
+}
+
+model InterviewFeedback {
+  id                 String           @id @default(cuid())
+  sessionId          String           @unique
+  overallScore       Float
+  overallSummary     String
+  technicalScore     Float?
+  behavioralScore    Float?
+  communicationScore Float
+  strengths          String[]
+  improvements       String[]
+  recommendations    String[]
+  questionAnalysis   Json[]
+  metricsData        Json?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  session            InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
